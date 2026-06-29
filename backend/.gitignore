@@ -1,0 +1,39 @@
+# Environment variables
+.env
+.cert/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Application specific
+downloads/
+*.mp3
+logs/
+*.log
+users.db
+*.db
+
+# Temporary files
+*.tmp
+*.bak

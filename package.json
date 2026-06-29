@@ -1,0 +1,51 @@
+{
+  "name": "telegram-music-miniapp",
+  "private": true,
+  "version": "0.20.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts,.tsx",
+    "start": "npm run build && chmod +x tunnel-watchdog.sh scripts/restart-all.sh 2>/dev/null; exec ./scripts/restart-all.sh",
+    "tunnel": "npm run start",
+    "run": "npm run tunnel",
+    "measure:api": "bash scripts/measure-api-latency.sh",
+    "measure:perf": "node scripts/measure-performance.mjs",
+    "measure:e2e-perf": "node scripts/e2e-perf.mjs",
+    "load-test": "node scripts/load-test-capacity.mjs"
+  },
+  "dependencies": {
+    "@twa-dev/sdk": "^7.10.1",
+    "framer-motion": "^11.3.4",
+    "hls.js": "^1.6.15",
+    "lucide-react": "^0.414.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sonner": "^1.5.0",
+    "wavesurfer.js": "^7.8.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.3",
+    "@playwright/test": "^1.58.2",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.16.0",
+    "eslint-plugin-react": "^7.37.2",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.4.41",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2",
+    "vitest": "^2.1.8"
+  }
+}

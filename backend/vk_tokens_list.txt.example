@@ -1,0 +1,7 @@
+# Скопируй в vk_tokens_list.txt (в .gitignore) или оставь бэкап под своим именем и вызови:
+#   bash scripts/vk_tokens_merge_for_env.sh путь/к/твоему/бэкапу.txt
+# Подставь реальные токены.
+# По одному VK user access token на строку. Пустые строки и # комментарии игнорируются.
+#
+# vk1_example_token_replace_me
+# vk1_second_token_optional

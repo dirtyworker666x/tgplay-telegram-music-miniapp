@@ -1,0 +1,11 @@
+# Railway — деплой по Dockerfile. Добавь переменные: BOT_TOKEN, VK_TOKEN, WEBAPP_URL (после деплоя подставь выданный URL).
+
+[build]
+builder = "dockerfile"
+
+[deploy]
+startCommand = "cd /app/backend && python -m uvicorn server_lite:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${WORKERS:-4} --limit-concurrency 500 --timeout-keep-alive 120"
+healthcheckPath = "/api/status"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5

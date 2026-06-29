@@ -1,0 +1,32 @@
+# TGPlay — запуск на VPS/сервере. Постоянный URL, без падающих туннелей.
+# После деплоя: укажи WEBAPP_URL в backend/.env на свой домен или IP.
+
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - backend/.env
+    environment:
+      - APP_PORT=8000
+      - WORKERS=4
+    restart: unless-stopped
+    # Масштабирование: раскомментируй и запусти docker-compose up -d --scale app=3
+    # deploy:
+    #   replicas: 2
+
+  # Опционально: Cloudflare Tunnel (постоянный URL без своего домена).
+  # 1. Создай туннель в Cloudflare Zero Trust → Tunnels → Create → получи TUNNEL_TOKEN.
+  # 2. В .env: CLOUDFLARE_TUNNEL_TOKEN=...
+  # 3. Раскомментируй cloudflared ниже и добавь CLOUDFLARE_TUNNEL_TOKEN в env.
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   command: tunnel --no-autoupdate run
+  #   environment:
+  #     - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+  #   depends_on:
+  #     - app
+  #   restart: unless-stopped

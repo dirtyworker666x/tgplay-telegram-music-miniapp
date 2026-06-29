@@ -1,0 +1,16 @@
+[Unit]
+Description=TGPlay Backend (FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/telegram-music-miniapp/backend
+ExecStart=/root/telegram-music-miniapp/backend/venv/bin/python server_lite.py
+Restart=always
+RestartSec=5
+Environment=PATH=/root/telegram-music-miniapp/backend/venv/bin:/usr/bin
+Environment=APP_PORT=8000
+
+[Install]
+WantedBy=multi-user.target

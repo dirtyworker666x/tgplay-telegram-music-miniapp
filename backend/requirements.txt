@@ -1,0 +1,16 @@
+fastapi==0.115.12
+python-multipart>=0.0.9
+uvicorn[standard]==0.34.0
+motor==3.7.1
+pydantic==2.10.4
+pydantic-settings>=2.0,<3
+aiohttp==3.11.11
+vkpymusic>=3.0
+aiogram==3.18.0
+yt-dlp>=2025.0.0
+ytmusicapi>=1.0.0
+Pillow>=10.0.0
+cryptography>=42.0
+PyJWT>=2.8.0
+aiohttp-socks>=0.8.0
+redis>=5.0.0

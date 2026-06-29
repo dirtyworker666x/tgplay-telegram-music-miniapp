@@ -1,0 +1,637 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --tg-blue: #0088cc;
+  --tg-blue-dark: #006699;
+  --surface: 241 245 249;
+  --surface-strong: 255 255 255;
+  --accent: 0 136 204;
+  --accent-strong: 0 102 153;
+  --text: 15 23 42;
+  --text-muted: 100 116 139;
+  --wave: 148 163 184;
+  --wave-progress: 0 136 204;
+  /*
+   * Верхний отступ: системный safe area + шапка Telegram (Bot API 8.0+).
+   * Без минимума — на iOS даёт лишний отступ; минимум 52px для Android задаётся из JS (applySafeAreaToDocument).
+   */
+  --tg-header-safe: calc(
+    var(--tg-safe-area-inset-top, env(safe-area-inset-top, 0px)) + var(--tg-content-safe-area-inset-top, 0px)
+  );
+}
+
+:root.dark {
+  --tg-blue: #54a9eb;
+  --tg-blue-dark: #2d7ab8;
+  --surface: 15 23 42;
+  --surface-strong: 30 41 59;
+  --surface-card: 18 26 40;
+  --accent: 84 169 235;
+  --accent-strong: 45 122 184;
+  --text: 226 232 240;
+  --text-muted: 148 163 184;
+  --wave: 71 85 105;
+  --wave-progress: 84 169 235;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+/* Убираем блики, прямоугольники при касании, фокусные обводки */
+button,
+[role="button"],
+a,
+input,
+select,
+textarea,
+[tabindex]:not([tabindex="-1"]) {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  outline: none;
+}
+
+/* Курсор в полях ввода — цвет текста, чтобы был виден на светлом фоне */
+input:not([type="range"]),
+textarea {
+  caret-color: rgb(var(--text));
+}
+button:focus,
+button:focus-visible,
+[role="button"]:focus,
+[role="button"]:focus-visible,
+a:focus,
+a:focus-visible {
+  outline: none;
+}
+/* Предотвращаем выделение на кнопках и интерактивных элементах */
+button,
+[role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html {
+  /* На мобильном Telegram WebView используем dvh для правильной высоты. Фон с первого кадра — без чёрной полосы снизу. */
+  height: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: rgb(var(--surface));
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Segoe UI, sans-serif;
+  background: rgb(var(--surface));
+  color: rgb(var(--text));
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding-top: var(--tg-header-safe);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+}
+
+.dark body,
+html.dark {
+  background: rgb(var(--surface));
+}
+
+/* Слой #app-bg в index.html — при тёмной теме подставляем цвет после загрузки CSS */
+html.dark #app-bg {
+  background-color: #0f172a !important;
+}
+
+#root {
+  height: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: rgb(var(--surface));
+}
+
+/*
+ * Шапка экрана в фулл-интерфейсе: название по центру между кнопками Telegram (не выше текущей высоты).
+ * Замеры: зона кнопки «Назад» 48px слева; высота ряда min 4rem; заголовок центрирован по всей ширине с отступами.
+ */
+.app-screen-header {
+  display: flex;
+  align-items: center;
+  min-height: 4rem;
+  position: relative;
+}
+.app-screen-header__back {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  z-index: 1;
+}
+.app-screen-header__title-zone {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding-left: 3rem;
+  padding-right: 3rem;
+  box-sizing: border-box;
+}
+.app-screen-header__title-zone h1 {
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Единственный скролл — список треков. Фон как у body, чтобы снизу не просвечивал чёрный до отрисовки контента. Полоса в коде, но прозрачная. */
+.app-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: rgb(var(--surface));
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  -ms-overflow-style: none;
+  padding-right: 17px;
+  margin-right: -17px;
+  width: calc(100% + 17px);
+  box-sizing: border-box;
+}
+.app-scroll::-webkit-scrollbar {
+  width: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.app-scroll::-webkit-scrollbar-track {
+  background: transparent !important;
+  -webkit-appearance: none;
+}
+.app-scroll::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  border: none !important;
+  -webkit-appearance: none;
+  border-radius: 4px;
+}
+.app-scroll::-webkit-scrollbar-thumb:hover,
+.app-scroll::-webkit-scrollbar-thumb:active {
+  background: transparent !important;
+}
+.app-scroll::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+.app-scroll::-webkit-scrollbar-button {
+  display: none;
+  background: transparent !important;
+}
+
+/* Прозрачная полоса у любых других скроллов (html, body, #root, дочерние блоки). */
+html, body, #root {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+#root::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+#root::-webkit-scrollbar-thumb {
+  background: transparent !important;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+*::-webkit-scrollbar-thumb {
+  background: transparent !important;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+.glass {
+  background: rgb(var(--surface-strong));
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+.glass-dark {
+  background: rgb(var(--surface-card));
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* Секции в стиле карточного layout — только структура, цвета из :root */
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+/* Главный экран: канал/чат — призрачные кнопки, серый полупрозрачный фон только в кружке иконки */
+.sub-header-link {
+  color: rgb(var(--text-muted));
+  border-color: rgb(var(--text-muted) / 0.4);
+  background: transparent;
+}
+.sub-header-icon {
+  background: rgba(0, 0, 0, 0.08);
+}
+.dark .sub-header-icon {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* «Моя волна»: чёрно-серый градиент + переливающийся блик */
+@keyframes tgplay-shine-dark-slide {
+  0% {
+    transform: translateX(-130%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(130%) skewX(-12deg);
+  }
+}
+
+.tgplay-shine-dark {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(125deg, #0a0a0c 0%, #2d2d33 42%, #141416 100%);
+  color: rgba(248, 250, 252, 0.96);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.tgplay-shine-dark::after {
+  content: "";
+  position: absolute;
+  inset: -20% -40%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 38%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(200, 220, 255, 0.06) 54%,
+    transparent 62%,
+    transparent 100%
+  );
+  animation: tgplay-shine-dark-slide 2.85s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+.tgplay-shine-dark > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Telegram Login Widget: чёрная кнопка + русский текст (официальный .tg-auth-button[data-style="shine"]) */
+[data-tgplay-telegram-login-row] {
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.25));
+}
+[data-tgplay-telegram-login-row] .tg-auth-button {
+  position: relative !important;
+  min-height: 40px !important;
+  padding: 0 18px !important;
+  border-radius: 9999px !important;
+  background: #0a0a0c !important;
+  background-image: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: rgba(248, 250, 252, 0.96) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
+}
+[data-tgplay-telegram-login-row] .tg-auth-button,
+[data-tgplay-telegram-login-row] .tg-auth-button * {
+  color: rgba(248, 250, 252, 0.96) !important;
+}
+
+/* Блок поиска на главном экране: сдвиг вправо */
+.search-bar-wrap {
+  padding-left: 24px !important;
+  box-sizing: border-box;
+}
+
+.dark .glass {
+  background: rgb(var(--surface-strong));
+}
+
+/* FullPlayer: убираем прямоугольные блики при анимации (loader, waveform, кнопки) */
+.fullplayer-controls {
+  contain: paint;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.fullplayer-controls button,
+.fullplayer-controls [role="button"] {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+/* Loader: GPU-слой, без прямоугольных артефактов при вращении */
+.loader-spin {
+  display: inline-block;
+  animation: loader-spin 0.8s linear infinite;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+@keyframes loader-spin {
+  from { transform: translateZ(0) rotate(0deg); }
+  to { transform: translateZ(0) rotate(360deg); }
+}
+
+/* Плавное появление секций (плейлист, контент после загрузки) */
+@keyframes app-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.app-fade-in {
+  animation: app-fade-in 0.25s ease-out forwards;
+}
+
+.track-cover {
+  background: rgb(var(--accent));
+}
+
+.waveform canvas {
+  border-radius: 999px;
+}
+
+/* Стилизация range input для мобильных */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  outline: none;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: 8px 0;
+  margin: -8px 0;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgb(var(--accent));
+  cursor: pointer;
+  border: 2px solid rgb(var(--surface-strong));
+  margin-top: -7px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgb(var(--accent));
+  cursor: pointer;
+  border: 2px solid rgb(var(--surface-strong));
+}
+
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* FullPlayer: десктоп — карточка по центру; при сужении окна обложка сжимается, в квадрате — только фон с затемнением, плеер статичен */
+.fullplayer-root {
+  box-sizing: border-box;
+}
+/* Ряд кнопок (сердечко, шеринг, в плейлист, скачать) — сдвиг на четверть строки вниз во всех режимах */
+.fullplayer-root .fullplayer-action-row {
+  margin-top: calc(0.75rem + 0.25em) !important;
+}
+
+/* Оконный плеер (меню Play / бот): обложка компактная, чтобы не налезала на дорожку. */
+.fullplayer-root:not(.fullplayer--compact-spacing) .fullplayer-cover-box {
+  width: min(80vw, 40vh, 260px) !important;
+  height: min(80vw, 40vh, 260px) !important;
+}
+.fullplayer-root:not(.fullplayer--compact-spacing) .fullplayer-cover-section {
+  margin-bottom: 1.5rem;
+}
+.fullplayer-root:not(.fullplayer--compact-spacing) .fullplayer-cover-caption p:first-child {
+  font-size: 1.125rem;
+}
+.fullplayer-root:not(.fullplayer--compact-spacing) .fullplayer-cover-caption p:last-child {
+  font-size: 0.875rem;
+}
+/* Блок дорожки + кнопки воспроизведения — отступ сверху от названия (разметка: div.fullplayer-waveform-block в TSX). */
+.fullplayer-root:not(.fullplayer--compact-spacing) .fullplayer-waveform-block {
+  margin-top: 2.75em !important;
+}
+
+/* iOS: во всех версиях плеера дорожка чуть ниже (на высоту строки) относительно Android */
+html.platform-ios .fullplayer-root:not(.fullplayer--compact-spacing) .fullplayer-waveform-block {
+  margin-top: 3.75em !important;
+}
+
+/* Desktop Web: оконный плеер (Play в боте) — дорожка на две строки ниже. */
+html.platform-desktop .fullplayer-root:not(.fullplayer--compact-spacing) .fullplayer-waveform-block {
+  margin-top: 3.75em !important;
+}
+
+/* Полная версия (Открыть / ?startapp): свой контур (хедер в потоке, отступы здесь). Не пересекается со сжатой. */
+[data-fullscreen-launch] .fullplayer-root {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0;
+}
+[data-fullscreen-launch] .fullplayer-root .relative.flex-1 {
+  min-height: 0;
+}
+[data-fullscreen-launch] .fullplayer-root .relative.z-10.flex-col {
+  min-height: 0;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 5em) !important;
+}
+[data-fullscreen-launch] .fullplayer-cover-section {
+  flex-shrink: 1;
+  min-height: 0;
+}
+[data-fullscreen-launch] .fullplayer-cover-box {
+  width: min(80vw, 35vh, 260px) !important;
+  height: min(80vw, 35vh, 260px) !important;
+}
+[data-fullscreen-launch] .fullplayer-cover-section {
+  margin-top: 0.15rem !important;
+  margin-bottom: 0.75rem !important;
+}
+[data-fullscreen-launch] .fullplayer-cover-caption {
+  margin-top: 0.2rem !important;
+}
+html:not(.platform-desktop) [data-fullscreen-launch] .fullplayer-waveform-block {
+  margin-top: 1.25em !important;
+}
+
+html.platform-ios [data-fullscreen-launch] .fullplayer-waveform-block {
+  margin-top: 2.25em !important;
+}
+
+/* iOS fullscreen: дорожка чуть ниже, кнопки на месте */
+html.platform-ios .fullplayer-root.fullplayer--compact-spacing .fullplayer-waveform-row {
+  padding-top: 2.5rem !important;
+  padding-bottom: 0.5rem !important;
+}
+
+/* Desktop Web: полноэкранный плеер по кнопке «Открыть» — дорожка ещё ниже */
+html.platform-desktop [data-fullscreen-launch] .fullplayer-root.fullplayer--web-desktop .fullplayer-waveform-block {
+  margin-top: 3.25em !important;
+}
+[data-fullscreen-launch] .fullplayer-root .relative.z-10.flex-col > .flex-col.shrink-0 {
+  padding-bottom: 0.25rem !important;
+  gap: 2px !important;
+}
+[data-fullscreen-launch] .fullplayer-root .fullplayer-action-row {
+  margin-top: calc(0.5rem + 0.25em) !important;
+  gap: 1.25rem !important;
+}
+[data-fullscreen-launch] .fullplayer-root .relative.z-10.flex-col {
+  padding-bottom: calc(max(10px, env(safe-area-inset-bottom)) + 40px) !important;
+}
+
+/* Telegram Web (десктоп): пропорции как в сжатой версии */
+[data-fullscreen-launch] .fullplayer-root.fullplayer--web-desktop .relative.z-10.flex-col {
+  padding-top: env(safe-area-inset-top, 0) !important;
+}
+[data-fullscreen-launch] .fullplayer-root.fullplayer--web-desktop .fullplayer-cover-section {
+  margin-top: calc(4.25rem - 1.2125em) !important;
+  margin-bottom: 1.5rem !important;
+}
+[data-fullscreen-launch] .fullplayer-root.fullplayer--web-desktop .fullplayer-cover-box {
+  width: min(94vw, 46vh, 396px) !important;
+  height: min(94vw, 46vh, 396px) !important;
+}
+
+/* Дублируем по классу (флаг compactSpacing из React) */
+.fullplayer-root.fullplayer--compact-spacing {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0;
+}
+.fullplayer-root.fullplayer--compact-spacing .relative.flex-1 { min-height: 0; }
+.fullplayer-root.fullplayer--compact-spacing .relative.z-10.flex-col {
+  min-height: 0;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 5em) !important;
+}
+.fullplayer-root.fullplayer--compact-spacing .fullplayer-cover-section {
+  flex-shrink: 1;
+  min-height: 0;
+  margin-top: 0.15rem !important;
+  margin-bottom: 0.75rem !important;
+}
+.fullplayer-root.fullplayer--compact-spacing .fullplayer-cover-box {
+  width: min(80vw, 35vh, 260px) !important;
+  height: min(80vw, 35vh, 260px) !important;
+}
+.fullplayer-root.fullplayer--compact-spacing .fullplayer-cover-caption { margin-top: 0.2rem !important; }
+.fullplayer-root.fullplayer--compact-spacing .fullplayer-waveform-block {
+  margin-top: 1.25em !important;
+}
+
+html.platform-ios .fullplayer-root.fullplayer--compact-spacing .fullplayer-waveform-block {
+  margin-top: 2.25em !important;
+}
+.fullplayer-root.fullplayer--compact-spacing .relative.z-10.flex-col > .flex-col.shrink-0 {
+  padding-bottom: 0.25rem !important;
+  gap: 2px !important;
+}
+.fullplayer-root.fullplayer--compact-spacing .fullplayer-action-row {
+  margin-top: calc(0.5rem + 0.25em) !important;
+  gap: 1.25rem !important;
+}
+.fullplayer-root.fullplayer--compact-spacing .relative.z-10.flex-col {
+  padding-bottom: calc(max(10px, env(safe-area-inset-bottom)) + 40px) !important;
+}
+
+/* Telegram Web (десктоп): те же пропорции, что в сжатой версии; смартфоны не трогаем */
+.fullplayer-root.fullplayer--compact-spacing.fullplayer--web-desktop .relative.z-10.flex-col {
+  padding-top: env(safe-area-inset-top, 0) !important;
+}
+.fullplayer-root.fullplayer--compact-spacing.fullplayer--web-desktop .fullplayer-cover-section {
+  margin-top: calc(4.25rem - 1.2125em) !important;
+  margin-bottom: 1.5rem !important;
+}
+.fullplayer-root.fullplayer--compact-spacing.fullplayer--web-desktop .fullplayer-cover-box {
+  width: min(94vw, 46vh, 396px) !important;
+  height: min(94vw, 46vh, 396px) !important;
+}
+
+/* Desktop: в оконной версии дорожка чуть ниже (две строки) */
+html.platform-desktop .fullplayer-root.fullplayer--compact-spacing.fullplayer--web-desktop .fullplayer-waveform-block {
+  margin-top: 3.75em !important;
+}
+.fullplayer-root.fullplayer--compact-spacing.fullplayer--web-desktop .fullplayer-cover-caption p:first-child {
+  font-size: 1.125rem;
+}
+.fullplayer-root.fullplayer--compact-spacing.fullplayer--web-desktop .fullplayer-cover-caption p:last-child {
+  font-size: 0.875rem;
+}
+
+@media (min-width: 768px) {
+  .fullplayer-root {
+    max-height: calc(100dvh - 2rem);
+    top: 1rem;
+    bottom: 1rem;
+    height: auto;
+    min-height: 400px;
+  }
+}
+/* Компактный режим (низкое окно / квадрат): обложка убирается, остаётся размытый фон + затемнение под элементами плеера */
+@media (max-height: 520px), (max-aspect-ratio: 1/1) and (max-height: 600px) {
+  .fullplayer-cover-section {
+    display: none;
+  }
+  .fullplayer-root .relative.z-10 > div:first-of-type {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+}
+/* Усиленное затемнение в компактном режиме, чтобы кнопки и дорожка читались на фоне обложки */
+@media (max-height: 520px) {
+  .fullplayer-root .fullplayer-overlay-gradient {
+    background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.85) 100%);
+  }
+  .fullplayer-root .fullplayer-overlay-dark {
+    background: rgba(0, 0, 0, 0.4);
+  }
+}

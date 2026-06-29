@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ru" style="background-color:#f1f5f9">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preload" href="/icon-header.png" as="image" fetchpriority="high" />
+    <meta
+      name="description"
+      content="TGPlay — музыкальный плеер для Telegram: поиск, плейлисты, фоновое воспроизведение и любимые треки в кэше."
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- Фон и theme-color до загрузки CSS — убирает чёрную полосу и мелькание в WebView -->
+    <meta name="theme-color" content="#f1f5f9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <!-- Название и иконка ярлыка приложения (Home Screen) -->
+    <meta name="apple-mobile-web-app-title" content="TGPlay" />
+    <meta name="application-name" content="TGPlay" />
+    <title>TGPlay</title>
+    <!-- Favicon / вкладка браузера -->
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <!-- Иконка именно для ярлыка приложения на домашнем экране -->
+    <link rel="apple-touch-icon" href="/icon-app.png" />
+    <!-- icon-track не прегружаем: лишний параллельный запрос на холодном старте в медленных WebView -->
+    <!-- Preconnect к своему origin без crossOrigin — иначе в части WebView лишний CORS-preflight к тому же хосту -->
+    <script>
+      (function () {
+        try {
+          var l = document.createElement("link");
+          l.rel = "preconnect";
+          l.href = location.origin;
+          document.head.appendChild(l);
+        } catch (e) {}
+      })();
+    </script>
+    <!-- Telegram Login (OIDC): один колбэк → POST /api/auth/telegram → React через tgplayApplyTelegramWebSession (без очереди/dispatch). -->
+    <script>
+      (function () {
+        var NONCE_KEY = "tgplay.telegram.oidc.nonce.v1";
+        function normalizePayload(data) {
+          if (data == null) return null;
+          if (typeof data === "string") {
+            try {
+              return JSON.parse(data);
+            } catch (e) {
+              return null;
+            }
+          }
+          if (typeof data === "object") return data;
+          return null;
+        }
+        /**
+         * Вызывается из telegram-login.js (Telegram.Login.init callback).
+         * См. https://core.telegram.org/bots/telegram-login
+         */
+        window.tgLoginOnAuth = function (data) {
+          var payload = normalizePayload(data);
+          if (!payload) {
+            console.error("[TGPlay] Telegram.Login: не удалось разобрать ответ", data);
+            if (typeof window.tgplayOnTelegramWebAuthError === "function") {
+              window.tgplayOnTelegramWebAuthError("parse", data);
+            }
+            return;
+          }
+          if (payload.error) {
+            console.warn("[TGPlay] Telegram.Login error:", payload.error);
+            if (typeof window.tgplayOnTelegramWebAuthError === "function") {
+              window.tgplayOnTelegramWebAuthError("telegram", payload.error);
+            }
+            return;
+          }
+          var idToken = typeof payload.id_token === "string" ? payload.id_token.trim() : "";
+          if (!idToken) {
+            console.warn("[TGPlay] Telegram.Login: missing id_token", payload);
+            if (typeof window.tgplayOnTelegramWebAuthError === "function") {
+              window.tgplayOnTelegramWebAuthError("missing_token", payload);
+            }
+            return;
+          }
+          var body = { id_token: idToken };
+          if (payload.user && typeof payload.user === "object") body.user = payload.user;
+          try {
+            var ns = sessionStorage.getItem(NONCE_KEY);
+            if (ns && String(ns).trim()) body.nonce = String(ns).trim();
+          } catch (e0) {}
+          fetch("/api/auth/telegram", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify(body),
+            credentials: "include",
+          })
+            .then(function (resp) {
+              return resp.text().then(function (txt) {
+                return { ok: resp.ok, status: resp.status, txt: txt };
+              });
+            })
+            .then(function (r) {
+              if (!r.ok) {
+                console.error("[TGPlay] auth/telegram failed", r.status, r.txt);
+                if (typeof window.tgplayOnTelegramWebAuthError === "function") {
+                  window.tgplayOnTelegramWebAuthError("http_" + r.status, r.txt);
+                }
+                return;
+              }
+              var out;
+              try {
+                out = JSON.parse(r.txt);
+              } catch (e1) {
+                if (typeof window.tgplayOnTelegramWebAuthError === "function") {
+                  window.tgplayOnTelegramWebAuthError("json", r.txt);
+                }
+                return;
+              }
+              if (!out.access_token || out.user == null || out.user.id == null) {
+                if (typeof window.tgplayOnTelegramWebAuthError === "function") {
+                  window.tgplayOnTelegramWebAuthError("invalid_response", out);
+                }
+                return;
+              }
+              try {
+                sessionStorage.removeItem(NONCE_KEY);
+              } catch (e2) {}
+              if (typeof window.tgplayApplyTelegramWebSession === "function") {
+                window.tgplayApplyTelegramWebSession(out);
+              }
+            })
+            .catch(function (e3) {
+              console.error("[TGPlay] auth/telegram network", e3);
+              if (typeof window.tgplayOnTelegramWebAuthError === "function") {
+                window.tgplayOnTelegramWebAuthError("network", String(e3));
+              }
+            });
+        };
+      })();
+    </script>
+    <!-- VK CDN не преконнектим в head: без VPN соединения к userapi/vkuseraudio часто висят и ломают холодный старт PWA с рабочего стола. -->
+    <!-- Скрипт с нашего домена: в ряде сетей telegram.org без VPN не открывается — белый экран / вечная загрузка -->
+    <!-- ready()/expand() в onload — раньше DOMContentLoaded, Telegram раньше снимает системный лоадер. -->
+    <script
+      defer
+      src="/telegram-web-app.js"
+      onload="try{var w=window.Telegram&amp;&amp;window.Telegram.WebApp;if(w){w.ready();w.expand();window.__tgplayEarlyReady=true;}}catch(e){}"
+    ></script>
+    <!-- Telegram Login: script async + data-client-id / data-onauth — вставляет React (TelegramWebLoginRow) -->
+  </head>
+  <body>
+    <!-- Слой фона на весь viewport: при «разъезде» мини-приложения на весь экран новая область сразу нашего цвета, без чёрной полосы -->
+    <div id="app-bg" style="position:fixed;inset:0;z-index:-1;pointer-events:none;background-color:#f1f5f9;"></div>
+    <!-- Убирается из React после монтирования. Если JS не поднялся — не чистый белый экран. -->
+    <div
+      id="tgplay-boot"
+      style="
+        position: fixed;
+        inset: 0;
+        z-index: 2147483646;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        box-sizing: border-box;
+        background: #f1f5f9;
+        color: #0f172a;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+        text-align: center;
+      "
+    >
+      <p style="margin: 0 0 8px; font-size: 18px; font-weight: 600">TGPlay</p>
+      <p style="margin: 0; font-size: 14px; opacity: 0.72; line-height: 1.4">Загрузка…</p>
+      <p
+        id="tgplay-boot-hint"
+        style="display: none; margin: 20px 0 0; font-size: 13px; max-width: 280px; line-height: 1.45; opacity: 0.78"
+      >
+        Если долго не открывается — проверьте соединение и обновите страницу. Для входа в аккаунт откройте мини‑приложение из бота Telegram.
+      </p>
+    </div>
+    <div id="root"></div>
+    <script>
+      (function () {
+        function showHint() {
+          var h = document.getElementById("tgplay-boot-hint");
+          var b = document.getElementById("tgplay-boot");
+          if (!h || !b) return;
+          if (b.getAttribute("data-tgplay-dismissed") === "1") return;
+          // На admin/stats не показываем «подсказку загрузки» — она выглядит как ошибка доступа.
+          try {
+            if (window.location && String(window.location.pathname || "").indexOf("/admin/stats") === 0) return;
+          } catch (e) {}
+          h.style.display = "block";
+        }
+        setTimeout(showHint, 8000);
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
